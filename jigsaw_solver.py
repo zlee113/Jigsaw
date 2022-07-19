@@ -112,20 +112,28 @@ class Image:
         x = 0
         y = tile.y + abs(self.map_indices[0][0].y)
 
-        if (y <= 0):
+        if (y < 0):
             self.map_indices.insert(0, [tile])
-            self.gray_images.pop(tile.index)
+            self.max_images -= 1
+            #self.gray_images.pop(tile.index)
 
         elif (y >= len(self.map_indices)):
             self.map_indices.append([tile])
-            self.gray_images.pop(tile.index)
+            self.max_images -= 1
+            #self.gray_images.pop(tile.index)
 
         elif (tile.x < self.map_indices[y][0].x):
-            self.map_indices[tile.y].insert(0, tile)
+            self.map_indices[y].insert(0, tile)
+            self.max_images -= 1
 
         else:
-            x = self.get_img_index(y, tile.x+1)
-            self.map_indices[y].insert(x, tile)
+            x = self.get_img_index(tile.y, tile.x-1)
+            if (x != None and x >= len(self.map_indices[y])-1):
+                self.map_indices[y].append(tile)
+                self.max_images -= 1
+            elif (x != None):
+                self.map_indices[y].insert(x, tile)
+                self.max_images -= 1
 
     def get_img_index(self, y, x):
         count = 0
@@ -135,6 +143,16 @@ class Image:
             count += 1
 
         return None
+
+    def list_of_x(self):
+        x_list = []
+        for r in range(len(self.map_indices)):
+            l = []
+            for c in range(len(self.map_indices[r])):
+                x = self.map_indices[r][c].x
+                l.append(x)
+            x_list.append(l)
+        return(x_list)
 
     def map_image(self):
 
@@ -224,8 +242,22 @@ class Image:
                     self.max_images -= 1
                 else:
                     west = False
-
-            print('Images left:', self.max_images)
+        x_list = self.list_of_x()
+        for row in range(len(self.map_indices)-1):
+            #print(self.map_indices[row])
+            for x in range(len(self.map_indices[row])):
+                self.cur_image.x = self.map_indices[row][x].x
+                self.cur_image.y = self.map_indices[row][x].y
+                self.cur_image.index = self.map_indices[row][x].index
+                in_next_row = False
+                if (self.map_indices[row][x].x not in x_list[row+1]):
+                    con, index = self.compare_tile(self.cur_image.index, 's')
+                    n_con, n_index = self.compare_tile(index, 'n')
+                    if (n_index == self.cur_image.index):
+                        t = Tile(self.cur_image.y+1, self.cur_image.x, index)
+                        self.place_image(t)
+                        self.max_images -= 1
+            #print('Images left:', self.max_images)
             # for r in range(len(self.map_indices)-1):
             #     self.cur_image.x = self.map_indices[r][0].x
             #     self.cur_image.y = self.map_indices[r][0].y
