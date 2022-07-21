@@ -13,11 +13,22 @@ def main():
     test = Image(10, t, 100)
     test.map_image()
 
-    for i in range(len(test.map_indices)):
-        print("\n")
-        for j in range(len(test.map_indices[i])):
-            print(test.map_indices[i][j].y, test.map_indices[i][j].x, test.map_indices[i][j].index, end="   ")
+    print('Does out.png look correct (type y to end): ')
+    x = input()
+    while (x != 'y'):
+        t = Tile(0,0, random.randrange(0, 303)) #len([n for n in os.listdir('.') if os.path.isfile(n)])))
+        print('Random Starting Image:', t.index)
+        test = Image(10, t, 100)
+        test.map_image()
 
+        print('Does out.png look correct (type y to end): ')
+        x = input()
+    # 
+    # for i in range(len(test.map_indices)):
+    #     print("\n")
+    #     for j in range(len(test.map_indices[i])):
+    #         print(test.map_indices[i][j].y, test.map_indices[i][j].x, test.map_indices[i][j].index, end="   ")
+    #
 
     #for i in range(304):
     #     print(test.compare_tile(i, 's'))
@@ -25,7 +36,7 @@ def main():
 
 def load_images():
     gray_images = []
-    images = [cv2.imread(file) for file in glob.glob("images_2/*.png")]
+    images = [cv2.imread(file) for file in glob.glob("images_xy/*.png")]
     for i in range(len(images)):
             gray = cv2.cvtColor(images[i], cv2.COLOR_BGR2GRAY)
             gray_images.append(gray)
@@ -61,7 +72,7 @@ class Tile:
 
 class Image:
     def __init__(self, confidence, cur_image, pixels):
-        self.images, self.gray_images = load_test_images()
+        self.images, self.gray_images = load_images()
         self.confidence = confidence
         self.cur_image = cur_image
         self.max_images = len(self.images)-1
@@ -153,6 +164,16 @@ class Image:
                 l.append(x)
             x_list.append(l)
         return(x_list)
+
+    def list_of_images(self):
+        index_list = []
+        for r in range(len(self.map_indices)):
+            l = []
+            for c in range(len(self.map_indices[r])):
+                x = self.images[self.map_indices[r][c].index]
+                l.append(x)
+            index_list.append(l)
+        return(index_list)
 
     def map_image(self):
 
@@ -257,6 +278,25 @@ class Image:
                         t = Tile(self.cur_image.y+1, self.cur_image.x, index)
                         self.place_image(t)
                         self.max_images -= 1
+
+        # x_list = self.list_of_x()
+        # x_list_reversed = []
+        # [x_list_reversed.append(i) for i in x_list[::-1]]
+        # print(x_list_reversed)
+        # for row in range((len(self.map_indices)-1) -1, -1, -1):
+        #     #print(self.map_indices[row])
+        #     for x in range(len(self.map_indices[row])):
+        #         self.cur_image.x = self.map_indices[row][x].x
+        #         self.cur_image.y = self.map_indices[row][x].y
+        #         self.cur_image.index = self.map_indices[row][x].index
+        #         in_next_row = False
+        #         if (self.map_indices[row][x].x not in x_list_reversed[row-1]):
+        #             con, index = self.compare_tile(self.cur_image.index, 'n')
+        #             n_con, n_index = self.compare_tile(index, 's')
+        #             if (n_index == self.cur_image.index):
+        #                 t = Tile(self.cur_image.y-1, self.cur_image.x, index)
+        #                 self.place_image(t)
+        #                 self.max_images -= 1
             #print('Images left:', self.max_images)
             # for r in range(len(self.map_indices)-1):
             #     self.cur_image.x = self.map_indices[r][0].x
@@ -279,6 +319,30 @@ class Image:
             #                 self.map_indices[r+1].append(t)
             #                 self.cur_image.index = index
             #                 self.max_images -= 1
+        self.build_image()
+
+    def build_image(self):
+        rows = []
+        # black_image = cv2.imread("black_image.png", cv2.IMREAD_COLOR)
+        # b = black_image[0:self.pixels, 0:self.pixels]
+        # self.images.append(b)
+        # max_x = len(max(self.map_indices, key=len))
+        #
+        # for row in range(len(self.map_indices)):
+        #     x_val = self.map_indices[row][0].x
+        #     for column in range(len(self.map_indices[row])):
+        #         if (self.map_indices[row][column].x != x_val):
+        #             t = Tile(row, x_val, len(self.images)-1)
+        #             self.place_image(t)
+        #         x_val += 1
+
+        im = self.list_of_images()
+
+        for r in range(len(self.map_indices)):
+            rows.append(cv2.hconcat(im[r]))
+
+        out = cv2.vconcat(rows)
+        cv2.imwrite('out.png', out)
 
 if __name__=="__main__":
     main()
