@@ -13,22 +13,22 @@ def main():
     test = Image(10, t, 100)
     test.map_image()
 
-    print('Does out.png look correct (type y to end): ')
-    x = input()
-    while (x != 'y'):
-        t = Tile(0,0, random.randrange(0, 303)) #len([n for n in os.listdir('.') if os.path.isfile(n)])))
-        print('Random Starting Image:', t.index)
-        test = Image(10, t, 100)
-        test.map_image()
+    #print('Does out.png look correct (type y to end): ')
+    #x = input()
+    #while (x != 'y'):
+    #    t = Tile(0,0, random.randrange(0, 303)) #len([n for n in os.listdir('.') if os.path.isfile(n)])))
+    #    print('Random Starting Image:', t.index)
+    #    test = Image(10, t, 100)
+    #    test.map_image()
 
-        print('Does out.png look correct (type y to end): ')
-        x = input()
-    # 
-    # for i in range(len(test.map_indices)):
-    #     print("\n")
-    #     for j in range(len(test.map_indices[i])):
-    #         print(test.map_indices[i][j].y, test.map_indices[i][j].x, test.map_indices[i][j].index, end="   ")
-    #
+    #    print('Does out.png look correct (type y to end): ')
+    #    x = input()
+     
+    for i in range(len(test.map_indices)):
+        print("\n")
+        for j in range(len(test.map_indices[i])):
+            print(test.map_indices[i][j].y, test.map_indices[i][j].x, test.map_indices[i][j].index, end="   ")
+    
 
     #for i in range(304):
     #     print(test.compare_tile(i, 's'))
@@ -36,7 +36,7 @@ def main():
 
 def load_images():
     gray_images = []
-    images = [cv2.imread(file) for file in glob.glob("images_xy/*.png")]
+    images = [cv2.imread(file) for file in glob.glob("images/*.png")]
     for i in range(len(images)):
             gray = cv2.cvtColor(images[i], cv2.COLOR_BGR2GRAY)
             gray_images.append(gray)
@@ -126,25 +126,17 @@ class Image:
         if (y < 0):
             self.map_indices.insert(0, [tile])
             self.max_images -= 1
-            #self.gray_images.pop(tile.index)
 
         elif (y >= len(self.map_indices)):
             self.map_indices.append([tile])
             self.max_images -= 1
-            #self.gray_images.pop(tile.index)
-
-        elif (tile.x < self.map_indices[y][0].x):
-            self.map_indices[y].insert(0, tile)
-            self.max_images -= 1
-
         else:
-            x = self.get_img_index(tile.y, tile.x-1)
-            if (x != None and x >= len(self.map_indices[y])-1):
-                self.map_indices[y].append(tile)
-                self.max_images -= 1
-            elif (x != None):
-                self.map_indices[y].insert(x, tile)
-                self.max_images -= 1
+            self.map_indices[y].append(tile)
+    
+    def sort_tiles(self):
+        for row in self.map_indices:
+            row.sort(key=lambda x: x.x)
+
 
     def get_img_index(self, y, x):
         count = 0
@@ -319,6 +311,7 @@ class Image:
             #                 self.map_indices[r+1].append(t)
             #                 self.cur_image.index = index
             #                 self.max_images -= 1
+        self.sort_tiles()
         self.build_image()
 
     def build_image(self):
