@@ -1,35 +1,27 @@
-#from scipy.ndimage import filters
-#from PIL import Image, ImageChops
-#import matplotlib.pyplot as plt
 import numpy as np
 import cv2
 import os
 import glob
 import random
-
+import sys
 
 # Main function used to instaniate the image, replace path with your own directory.
 
 def main():
 
-    path = '/nis_home/zclee/zcleeTestbox/Jigsaw/images'
+    path = '/nis_home/zclee/zcleeTestbox/Jigsaw/nyc_images'
     t = Tile(0,0, random.randrange(0, len([n for n in os.listdir(path) if os.path.join(path, n)])))
-    print('Random Starting Image:', t.index)
-    test = Image(10, t, 100)
+    pixels = 100
+    #print('Random Starting Image:', t.index)
+    #if (sys.argv[1] == "-p"):
+    #    path = sys.argv[2]
+    #    pixels = int(sys.argv[3])
+    #else:
+    #    path = '/nis_home/zclee/zcleeTestbox/Jigsaw/images'
+
+    test = Image(t, pixels, path)
     test.map_image()
-
-    print(test.max_images)
-    #print('Does out.png look correct (type y to end): ')
-    #x = input()
-    #while (x != 'y'):
-    #    t = Tile(0,0, random.randrange(0, randomMax)) #len([n for n in os.listdir('.') if os.path.isfile(n)])))
-    #    print('Random Starting Image:', t.index)
-    #    test = Image(10, t, 100)
-    #    test.map_image()
-
-    #    print('Does out.png look correct (type y to end): ')
-    #    x = input()
-     
+    print("Images Left:" , test.max_images)
     for i in range(len(test.map_indices)):
         print("\n")
         for j in range(len(test.map_indices[i])):
@@ -40,18 +32,38 @@ def main():
         for j in range(len(test.map_indices[i])-1):
             if (test.map_indices[i][j].x + 1 != test.map_indices[i][j+1].x):
                 print("Image:", str(38*i + j + 1), "to", str(38*i + test.map_indices[i][j+1].x + abs(test.map_indices[i][0].x) - 1) , "is missing")
-    
 
-    #for i in range(304):
-    #     print(test.compare_tile(i, 's'))
+
+    print('Does the output look correct (type y to end): ')
+    x = input()
+    while (x != 'y'):
+        t = Tile(0,0, random.randrange(0, len([n for n in os.listdir(path) if os.path.join(path, n)])))
+        #print('Random Starting Image:', t.index)
+        test = Image(t, 100, path)
+        test.map_image()
+        for i in range(len(test.map_indices)):
+            print("\n")
+            for j in range(len(test.map_indices[i])):
+                print(test.map_indices[i][j].y, test.map_indices[i][j].x, test.map_indices[i][j].index, end="   ")
+    
+        print("\n")
+        for i in range(len(test.map_indices)):
+            for j in range(len(test.map_indices[i])-1):
+                if (test.map_indices[i][j].x + 1 != test.map_indices[i][j+1].x):
+                    print("Image:", str(38*i + j + 1), "to", str(38*i + test.map_indices[i][j+1].x + abs(test.map_indices[i][0].x) - 1) , "is missing")
+
+
+        print('Does the output look correct (type y to end): ')
+        x = input()
+     
 
 
 # Load all png images in current pwd/images, make sure to make changes if not pngs or the directory
 # isn't /images
 
-def load_images():
+def load_images(path):
     gray_images = []
-    images = [cv2.imread(file) for file in glob.glob("images/*.png")]
+    images = [cv2.imread(file) for file in glob.glob(path + "/*.png")]
     for i in range(len(images)):
             gray = cv2.cvtColor(images[i], cv2.COLOR_BGR2GRAY)
             gray_images.append(gray)
@@ -60,16 +72,16 @@ def load_images():
 
 # A load function to pick the pictues in a nonrandom order //Used only for testing
 
-def load_test_images():
+def load_test_images(path):
     images = []
     gray_images = []
     x_val = 0
     y_val = 1
     c = 0
-    for j in range(8):
-        for i in range(38):
+    for j in range(4):
+        for i in range(6):
                 #img_name = 'images_2/y: '+ str(y_val) + ' x: ' + str(x_val) + ".png"
-                img_name = 'images_xy/' + str(c) + ".png"
+                img_name = path + "/"+ str(c) + ".png"
                 images.append(cv2.imread(img_name))
                 x_val += 1
                 c += 1
@@ -96,17 +108,15 @@ class Tile:
 class Image:
 
     # Initializes an image object with all the values below
-    def __init__(self, confidence, cur_image, pixels):
-        self.images, self.gray_images = load_images()
-        self.confidence = confidence
+    def __init__(self, cur_image, pixels, path):
+        self.images, self.gray_images = load_test_images(path)
         self.cur_image = cur_image
         self.max_images = len(self.images)-1
         t = Tile(cur_image.y, cur_image.x, cur_image.index)
         self.map_indices = [[t]]
         self.first_img = cur_image.index
-        self.hor = 0
-        self.vert = 0
         self.pixels = pixels
+
 
 
     # comparison function needs an index to start with and a direction to compare the pixel values of all the other 
@@ -155,7 +165,7 @@ class Image:
     def place_image(self, tile):
         x = 0
         y = tile.y + abs(self.map_indices[0][0].y)
-
+        print(tile.y, tile.x, tile.index)
         # adds a new row on top
         if (y < 0):
             self.map_indices.insert(0, [tile])
@@ -167,7 +177,7 @@ class Image:
         # adds an x values to a row
         else:
             self.map_indices[y].append(tile)
-
+            self.max_images -= 1
 
     # sorts all the rows by their x value
     def sort_tiles(self):
@@ -222,7 +232,7 @@ class Image:
                 self.place_image(t)
                 self.cur_image.index = index
                 self.cur_image.y -= 1
-                self.max_images -= 1
+                #self.max_images -= 1
             else:
                 self.cur_image.y = 0
                 self.cur_image.index = self.first_img
@@ -237,7 +247,7 @@ class Image:
                 self.place_image(t)
                 self.cur_image.index = index
                 self.cur_image.y += 1
-                self.max_images -= 1
+
             else:
                 south = False
 
@@ -257,7 +267,7 @@ class Image:
                     self.place_image(t)
                     self.cur_image.index = index
                     self.cur_image.x += 1
-                    self.max_images -= 1
+
                 else:
                     east = False
 
@@ -274,9 +284,55 @@ class Image:
                     self.place_image(t)
                     self.cur_image.index = index
                     self.cur_image.x -= 1
-                    self.max_images -= 1
+
                 else:
                     west = False
+
+        top = self.map_indices[0]
+        bot = self.map_indices[-1]
+        for c in range(len(self.map_indices[0])):
+            # North half implementation
+            
+            north = True
+            self.cur_image.x = top[c].x
+            self.cur_image.y = top[c].y
+            self.cur_image.index = top[c].index
+            # goes and maps all the way up until it doesn't have enough confidence to place
+            while(north == True):
+                con, index = self.compare_tile(self.cur_image.index, 'n')
+                n_con, n_index = self.compare_tile(index, 's')
+                if (n_index == self.cur_image.index):
+                    print("north")
+                    t = Tile(self.cur_image.y-1, self.cur_image.x, index)
+                    self.place_image(t)
+                    self.cur_image.index = index
+                    self.cur_image.y -= 1
+
+                else:
+                    north = False
+
+        for col in range(len(self.map_indices[-1])):
+            # south half implementation
+            print(col, len(self.map_indices[-1]))
+            south = True
+            self.cur_image.x = bot[col].x
+            self.cur_image.y = bot[col].y
+            self.cur_image.index = bot[col].index
+            # goes and maps all the way down until it doesn't have enough confidence to place
+            while(south == True):
+                con, index = self.compare_tile(self.cur_image.index, 's')
+                n_con, n_index = self.compare_tile(index, 'n')
+                if (n_index == self.cur_image.index):
+                    print("south")
+                    t = Tile(self.cur_image.y+1, self.cur_image.x, index)
+                    self.place_image(t)
+                    self.cur_image.index = index
+                    self.cur_image.y += 1
+
+                else:
+                    south = False
+
+
 
 
         # Starting at the top row on a row to row basis fill in each row beneath with any x values that the 
@@ -295,7 +351,7 @@ class Image:
                     if (n_index == self.cur_image.index):
                         t = Tile(self.cur_image.y+1, self.cur_image.x, index)
                         self.place_image(t)
-                        self.max_images -= 1
+
 
         x_list = self.list_of_x()
         for row in range(len(self.map_indices)-1, 0, -1):
@@ -310,30 +366,13 @@ class Image:
                     if (n_index == self.cur_image.index):
                         t = Tile(self.cur_image.y-1, self.cur_image.x, index)
                         self.place_image(t)
-                        self.max_images -= 1
-            #print('Images left:', self.max_images)
-            # for r in range(len(self.map_indices)-1):
-            #     self.cur_image.x = self.map_indices[r][0].x
-            #     self.cur_image.y = self.map_indices[r][0].y
-            #     self.cur_image.index = self.map_indices[r][0].index
-            #     if (len(self.map_indices[r]) < len(self.map_indices[r+1])):
-            #         continue
-            #     for c in range(len(self.map_indices[r])):
-            #         n_val = False
-            #         for next_row in range(len(self.map_indices[r+1])):
-            #             if (self.map_indices[r][c].x != self.map_indices[r][next_row].x):
-            #                 continue
-            #             else:
-            #                 n_val = True
-            #         if (n_val == False):
-            #             con, index = self.compare_tile(self.cur_image.index, 's')
-            #             n_con, n_index = self.compare_tile(index, 'n')
-            #             if (n_index == self.cur_image.index):
-            #                 t = Tile(self.cur_image.y+1, self.cur_image.x, index)
-            #                 self.map_indices[r+1].append(t)
-            #                 self.cur_image.index = index
-            #                 self.max_images -= 1
+
+
+        # This will sort the tiles by their x value
         self.sort_tiles()
+        
+        # added function to put all the pieces together by row first and then column but
+        # rows all have to be same size to work so holes need to be patched
         #self.build_image()
 
 
@@ -359,7 +398,7 @@ class Image:
             rows.append(cv2.hconcat(im[r]))
 
         out = cv2.vconcat(rows)
-        cv2.imwrite('out.png', out)
+        cv2.imwrite('out1.png', out)
 
 if __name__=="__main__":
     main()
