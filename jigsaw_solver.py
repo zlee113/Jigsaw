@@ -12,48 +12,28 @@ def main():
     path = '/nis_home/zclee/zcleeTestbox/Jigsaw/nyc_images'
     t = Tile(0,0, random.randrange(0, len([n for n in os.listdir(path) if os.path.join(path, n)])))
     pixels = 100
-    #print('Random Starting Image:', t.index)
-    #if (sys.argv[1] == "-p"):
-    #    path = sys.argv[2]
-    #    pixels = int(sys.argv[3])
-    #else:
-    #    path = '/nis_home/zclee/zcleeTestbox/Jigsaw/images'
+  
+    x = 'n'
 
-    test = Image(t, pixels, path)
-    test.map_image()
-    print("Images Left:" , test.max_images)
-    for i in range(len(test.map_indices)):
-        print("\n")
-        for j in range(len(test.map_indices[i])):
-            print(test.map_indices[i][j].y, test.map_indices[i][j].x, test.map_indices[i][j].index, end="   ")
-    
-    print("\n")
-    for i in range(len(test.map_indices)):
-        for j in range(len(test.map_indices[i])-1):
-            if (test.map_indices[i][j].x + 1 != test.map_indices[i][j+1].x):
-                print("Image:", str(38*i + j + 1), "to", str(38*i + test.map_indices[i][j+1].x + abs(test.map_indices[i][0].x) - 1) , "is missing")
-
-
-    print('Does the output look correct (type y to end): ')
-    x = input()
     while (x != 'y'):
+        islands = []
         t = Tile(0,0, random.randrange(0, len([n for n in os.listdir(path) if os.path.join(path, n)])))
-        #print('Random Starting Image:', t.index)
-        test = Image(t, 100, path)
+
+        test = Image(t, pixels, path)
         test.map_image()
-        for i in range(len(test.map_indices)):
-            print("\n")
-            for j in range(len(test.map_indices[i])):
-                print(test.map_indices[i][j].y, test.map_indices[i][j].x, test.map_indices[i][j].index, end="   ")
-    
-        print("\n")
-        for i in range(len(test.map_indices)):
-            for j in range(len(test.map_indices[i])-1):
-                if (test.map_indices[i][j].x + 1 != test.map_indices[i][j+1].x):
-                    print("Image:", str(38*i + j + 1), "to", str(38*i + test.map_indices[i][j+1].x + abs(test.map_indices[i][0].x) - 1) , "is missing")
+         
+        while(test.max_images < 0):
+            test.clear_map()
+            t = Tile(0,0, random.randrange(0, len([n for n in os.listdir(path) if os.path.join(path, n)])))
+            test = Image(t, pixels, path)
+            test.map_image()
+        test.print_map()
+     #   for i in range(len(test.map_indices)):
+     #       for j in range(len(test.map_indices[i])-1):
+     #           if (test.map_indices[i][j].x + 1 != test.map_indices[i][j+1].x):
+     #               print("Image:", str(38*i + j + 1), "to", str(38*i + test.map_indices[i][j+1].x + abs(test.map_indices[i][0].x) - 1) , "is missing")
 
-
-        print('Does the output look correct (type y to end): ')
+        print('\nDoes the output look correct (type y to end): ')
         x = input()
      
 
@@ -109,14 +89,14 @@ class Image:
 
     # Initializes an image object with all the values below
     def __init__(self, cur_image, pixels, path):
-        self.images, self.gray_images = load_test_images(path)
+        self.images, self.gray_images = load_images(path)
         self.cur_image = cur_image
         self.max_images = len(self.images)-1
         t = Tile(cur_image.y, cur_image.x, cur_image.index)
         self.map_indices = [[t]]
         self.first_img = cur_image.index
         self.pixels = pixels
-
+        self.unused_images = []
 
 
     # comparison function needs an index to start with and a direction to compare the pixel values of all the other 
@@ -124,19 +104,19 @@ class Image:
     def compare_tile(self, index, direction):
         if (direction == 'n'):
             y1 = 0
-            y2 = 99
+            y2 = self.pixels-1
 
         elif (direction == 's'):
-            y1 = 99
+            y1 = self.pixels-1
             y2 = 0
 
         elif (direction == 'e'):
-            x1 = 99
+            x1 = self.pixels-1
             x2 = 0
 
         elif (direction == 'w'):
             x1 = 0
-            x2 = 99
+            x2 = self.pixels-1
 
         color = []
         cmp_img = []
@@ -161,11 +141,22 @@ class Image:
         minimum = min(cmp_img)
         return [minimum, cmp_img.index(minimum)]
 
+    def print_map(self):
+        for i in range(len(self.map_indices)):
+            print("\n")
+            for j in range(len(self.map_indices[i])):
+                print(self.map_indices[i][j].y, self.map_indices[i][j].x, self.map_indices[i][j].index, end="   ")
+        
+
+
     # This function determines where the tile should be placed in the mappings of the array
     def place_image(self, tile):
         x = 0
         y = tile.y + abs(self.map_indices[0][0].y)
-        print(tile.y, tile.x, tile.index)
+        x_list = self.list_of_x()
+        if (tile.index in self.unused_images):
+            self.unused_images.remove(tile.index)
+
         # adds a new row on top
         if (y < 0):
             self.map_indices.insert(0, [tile])
@@ -178,6 +169,9 @@ class Image:
         else:
             self.map_indices[y].append(tile)
             self.max_images -= 1
+
+    def clear_map(self):
+         self.map_indices.clear()
 
     # sorts all the rows by their x value
     def sort_tiles(self):
@@ -219,7 +213,9 @@ class Image:
 
     # maps out the entire image based on the starting one
     def map_image(self):
-
+        # setting up a list that will show at the end which images haven't been used
+        for i in range(len(self.images)):
+            self.unused_images.append(i)
         north = True
         south = True
 
@@ -302,7 +298,6 @@ class Image:
                 con, index = self.compare_tile(self.cur_image.index, 'n')
                 n_con, n_index = self.compare_tile(index, 's')
                 if (n_index == self.cur_image.index):
-                    print("north")
                     t = Tile(self.cur_image.y-1, self.cur_image.x, index)
                     self.place_image(t)
                     self.cur_image.index = index
@@ -313,7 +308,6 @@ class Image:
 
         for col in range(len(self.map_indices[-1])):
             # south half implementation
-            print(col, len(self.map_indices[-1]))
             south = True
             self.cur_image.x = bot[col].x
             self.cur_image.y = bot[col].y
@@ -323,7 +317,6 @@ class Image:
                 con, index = self.compare_tile(self.cur_image.index, 's')
                 n_con, n_index = self.compare_tile(index, 'n')
                 if (n_index == self.cur_image.index):
-                    print("south")
                     t = Tile(self.cur_image.y+1, self.cur_image.x, index)
                     self.place_image(t)
                     self.cur_image.index = index
@@ -332,7 +325,42 @@ class Image:
                 else:
                     south = False
 
+        self.sort_tiles()
+        # Add East and West tiles to the newly added rows on top and bottom
+        for row in range(len(self.map_indices)):
+            # East half implementation
+            east = True
+            self.cur_image.x = self.map_indices[row][-1].x
+            self.cur_image.y = self.map_indices[row][-1].y
+            self.cur_image.index = self.map_indices[row][-1].index
+            while(east == True):
+                con, index = self.compare_tile(self.cur_image.index, 'e')
+                n_con, n_index = self.compare_tile(index, 'w')
+                if (n_index == self.cur_image.index):
+                    t = Tile(self.cur_image.y, self.cur_image.x+1, index)
+                    self.place_image(t)
+                    self.cur_image.index = index
+                    self.cur_image.x += 1
 
+                else:
+                    east = False
+
+            # West half implementation
+            west = True
+            self.cur_image.x = self.map_indices[row][0].x
+            self.cur_image.y = self.map_indices[row][0].y
+            self.cur_image.index = self.map_indices[row][0].index
+            while(west == True):
+                con, index = self.compare_tile(self.cur_image.index, 'w')
+                n_con, n_index = self.compare_tile(index, 'e')
+                if (n_index == self.cur_image.index):
+                    t = Tile(self.cur_image.y, self.cur_image.x-1, index)
+                    self.place_image(t)
+                    self.cur_image.index = index
+                    self.cur_image.x -= 1
+
+                else:
+                    west = False
 
 
         # Starting at the top row on a row to row basis fill in each row beneath with any x values that the 
@@ -370,7 +398,10 @@ class Image:
 
         # This will sort the tiles by their x value
         self.sort_tiles()
-        
+        islands = []
+        if (self.max_images > 0):
+            
+
         # added function to put all the pieces together by row first and then column but
         # rows all have to be same size to work so holes need to be patched
         #self.build_image()
