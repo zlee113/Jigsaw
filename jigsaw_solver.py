@@ -9,7 +9,8 @@ import sys
 
 def main():
 
-    path = '/nyc_images'
+    path = os.getcwd()
+    path += '/images'
     t = Tile(0,0, random.randrange(0, len([n for n in os.listdir(path) if os.path.join(path, n)])))
     pixels = 100
 
@@ -145,7 +146,7 @@ class Image:
         for i in range(len(self.map_indices)):
             print("\n")
             for j in range(len(self.map_indices[i])):
-                print(self.map_indices[i][j].y, self.map_indices[i][j].x, self.map_indices[i][j].index)
+                print(self.map_indices[i][j].y, self.map_indices[i][j].x, self.map_indices[i][j].index, end="   ")
 
 
 
@@ -213,7 +214,7 @@ class Image:
 
     # maps out the entire image based on the starting one
     def map_image(self):
-        # setting up a list that will show at the end which images haven't been used
+        # setting up a list that will 161show at the end which images haven't been used
         for i in range(len(self.images)):
             self.unused_images.append(i)
         islands = []
@@ -231,7 +232,6 @@ class Image:
                     self.place_image(t)
                     self.cur_image.index = index
                     self.cur_image.y -= 1
-                    #self.max_images -= 1
                 else:
                     self.cur_image.y = 0
                     self.cur_image.index = self.first_img
@@ -402,15 +402,16 @@ class Image:
             # This will sort the tiles by their x value
             self.sort_tiles()
             islands.append(self.map_indices)
-
+            print(self.max_images)
             if (self.max_images > 0):
                 self.clear_map()
-                self.map_indices.append([self.unused_images[0]])
+                t = Tile(0,0,self.unused_images[0])
+                self.map_indices.append([t])
 
             if (self.max_images == 0):
                 # added function to put all the pieces together by row first and then column but
                 # rows all have to be same size to work so holes need to be patched
-                self.build_image(islands)
+                #self.build_image(islands)
 
 
     # Fill holes and concatenate rows and then concatenate vertically to rebuild the image
