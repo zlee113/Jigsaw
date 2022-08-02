@@ -67,7 +67,7 @@ def load_test_images(path):
     images.append(cv2.imread(path + "/5.png"))
     images.append(cv2.imread(path + "/6.png"))
     images.append(cv2.imread(path + "/7.png"))
-    #images.append(cv2.imread(path + "/8.png"))
+    images.append(cv2.imread(path + "/8.png"))
     images.append(cv2.imread(path + "/9.png"))
     images.append(cv2.imread(path + "/10.png"))
     images.append(cv2.imread(path + "/11.png"))
@@ -115,7 +115,7 @@ class Image:
 
     # Initializes an image object with all the values below
     def __init__(self, cur_image, pixels, path):
-        self.images, self.gray_images = load_test_images(path)
+        self.images, self.gray_images = load_images(path)
         self.cur_image = cur_image
         self.max_images = len(self.images)-1
         t = Tile(cur_image.y, cur_image.x, cur_image.index)
@@ -429,31 +429,41 @@ class Image:
         # This will sort the tiles by their x value
         self.sort_tiles()
         #self.print_map()
-        #self.build_image()
+        self.build_image()
 
     # Fill holes and concatenate rows and then concatenate vertically to rebuild the image
     def build_image(self):
         rows = []
-        black_image = cv2.imread("black_image.png", cv2.IMREAD_COLOR)
+        black_image = cv2.imread("gray.PNG", cv2.IMREAD_COLOR)
         b = black_image[0:self.pixels, 0:self.pixels]
         self.images.append(b)
-        max_x = len(max(self.map_indices, key=len))
+        max_x = max(self.map_indices, key=len)
+        len_max_x = len(max(self.map_indices, key=len))
+        x = max_x[0].x
 
+        x_list = self.list_of_x()
+        for row in range(len(self.map_indices)-1):
+            #print(self.map_indices[row])
+            for x in range(len(self.map_indices[row])):
+                self.cur_image.x = self.map_indices[row][x].x
+                self.cur_image.y = self.map_indices[row][x].y
+                self.cur_image.index = self.map_indices[row][x].index
+                in_next_row = False
+                if (self.map_indices[row][x].x not in x_list[row+1]):
+                    t = Tile(self.cur_image.y+1, self.cur_image.x, len(self.images)-1)
+                    self.place_image(t)
 
-        #
-        # for row in range(len(self.map_indices)):
-        #     x_val = self.map_indices[row][0].x
-        #     for column in range(max_x):
-        #         try:
-        #             if (self.map_indices[row][column].x != x_val):
-        #                 t = Tile(row, x_val, len(self.images)-1)
-        #                 self.place_image(t)
-        #         except:
-        #             t = Tile(row, x_val, len(self.images)-1)
-        #             self.place_image(t)
-        #         x_val += 1
-
-
+        x_list = self.list_of_x()
+        for row in range(len(self.map_indices)-1, 0, -1):
+            for x in range(len(self.map_indices[row])):
+                self.cur_image.x = self.map_indices[row][x].x
+                self.cur_image.y = self.map_indices[row][x].y
+                self.cur_image.index = self.map_indices[row][x].index
+                in_next_row = False
+                if (self.map_indices[row][x].x not in x_list[row-1]):
+                    t = Tile(self.cur_image.y-1, self.cur_image.x, len(self.images)-1)
+                    self.place_image(t)
+        self.print_map()
         im = self.list_of_images()
 
         for r in range(len(self.map_indices)):
