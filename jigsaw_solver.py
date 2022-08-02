@@ -10,7 +10,7 @@ import sys
 def main():
 
     path = os.getcwd()
-    path += '/images'
+    path += '/nyc_images'
     t = Tile(0,0, random.randrange(0, len([n for n in os.listdir(path) if os.path.join(path, n)])))
     pixels = 100
 
@@ -23,11 +23,11 @@ def main():
         test = Image(t, pixels, path)
         test.map_image()
 
-        while(test.max_images < 0):
-            test.clear_map()
-            t = Tile(0,0, random.randrange(0, len([n for n in os.listdir(path) if os.path.join(path, n)])))
-            test = Image(t, pixels, path)
-            test.map_image()
+        # while(test.max_images < 0):
+        #     test.clear_map()
+        #     t = Tile(0,0, random.randrange(0, len([n for n in os.listdir(path) if os.path.join(path, n)])))
+        #     test = Image(t, pixels, path)
+        #     test.map_image()
         test.print_map()
      #   for i in range(len(test.map_indices)):
      #       for j in range(len(test.map_indices[i])-1):
@@ -59,15 +59,40 @@ def load_test_images(path):
     x_val = 0
     y_val = 1
     c = 0
-    for j in range(4):
-        for i in range(6):
-                #img_name = 'images_2/y: '+ str(y_val) + ' x: ' + str(x_val) + ".png"
-                img_name = path + "/"+ str(c) + ".png"
-                images.append(cv2.imread(img_name))
-                x_val += 1
-                c += 1
-        y_val += 1
-        x_val = 0
+    images.append(cv2.imread(path + "/0.png"))
+    images.append(cv2.imread(path + "/1.png"))
+    images.append(cv2.imread(path + "/2.png"))
+    images.append(cv2.imread(path + "/3.png"))
+    images.append(cv2.imread(path + "/4.png"))
+    images.append(cv2.imread(path + "/5.png"))
+    images.append(cv2.imread(path + "/6.png"))
+    images.append(cv2.imread(path + "/7.png"))
+    #images.append(cv2.imread(path + "/8.png"))
+    images.append(cv2.imread(path + "/9.png"))
+    images.append(cv2.imread(path + "/10.png"))
+    images.append(cv2.imread(path + "/11.png"))
+    images.append(cv2.imread(path + "/12.png"))
+    images.append(cv2.imread(path + "/13.png"))
+    images.append(cv2.imread(path + "/14.png"))
+    images.append(cv2.imread(path + "/15.png"))
+    images.append(cv2.imread(path + "/16.png"))
+    images.append(cv2.imread(path + "/17.png"))
+    images.append(cv2.imread(path + "/18.png"))
+    images.append(cv2.imread(path + "/19.png"))
+    images.append(cv2.imread(path + "/20.png"))
+    images.append(cv2.imread(path + "/21.png"))
+    images.append(cv2.imread(path + "/22.png"))
+    images.append(cv2.imread(path + "/23.png"))
+
+    # for j in range(4):
+    #     for i in range(6):
+    #             #img_name = 'images_2/y: '+ str(y_val) + ' x: ' + str(x_val) + ".png"
+    #             img_name = path + "/"+ str(c) + ".png"
+    #             images.append(cv2.imread(img_name))
+    #             x_val += 1
+    #             c += 1
+    #     y_val += 1
+    #     x_val = 0
     for image in range(len(images)):
         gray = cv2.cvtColor(images[image], cv2.COLOR_BGR2GRAY)
         gray_images.append(gray)
@@ -90,7 +115,7 @@ class Image:
 
     # Initializes an image object with all the values below
     def __init__(self, cur_image, pixels, path):
-        self.images, self.gray_images = load_images(path)
+        self.images, self.gray_images = load_test_images(path)
         self.cur_image = cur_image
         self.max_images = len(self.images)-1
         t = Tile(cur_image.y, cur_image.x, cur_image.index)
@@ -155,6 +180,7 @@ class Image:
         x = 0
         y = tile.y + abs(self.map_indices[0][0].y)
         x_list = self.list_of_x()
+        print(tile.index)
         if (tile.index in self.unused_images):
             self.unused_images.remove(tile.index)
 
@@ -169,6 +195,7 @@ class Image:
         # adds an x values to a row
         else:
             self.map_indices[y].append(tile)
+            self.sort_tiles()
             self.max_images -= 1
 
     def clear_map(self):
@@ -216,32 +243,111 @@ class Image:
     def map_image(self):
         # setting up a list that will 161show at the end which images haven't been used
         for i in range(len(self.images)):
+            if i == self.cur_image.index:
+                continue
             self.unused_images.append(i)
-        islands = []
 
-        while (self.max_images > 0):
+        print(self.unused_images)
+        north = True
+        south = True
+
+        # goes and maps all the way up until it doesn't have enough confidence to place
+        while(north == True):
+            con, index = self.compare_tile(self.cur_image.index, 'n')
+            n_con, n_index = self.compare_tile(index, 's')
+            if (n_index == self.cur_image.index and index in self.unused_images):
+                t = Tile(self.cur_image.y-1, self.cur_image.x, index)
+                self.place_image(t)
+                self.cur_image.index = index
+                self.cur_image.y -= 1
+            else:
+                self.cur_image.y = 0
+                self.cur_image.index = self.first_img
+                north = False
+
+        # goes and maps all the way down until it doesn't have enough confidence to place
+        while(south == True):
+            con, index = self.compare_tile(self.cur_image.index, 's')
+            n_con, n_index = self.compare_tile(index, 'n')
+            if (n_index == self.cur_image.index and index in self.unused_images):
+                t = Tile(self.cur_image.y+1, self.cur_image.x, index)
+                self.place_image(t)
+                self.cur_image.index = index
+                self.cur_image.y += 1
+
+            else:
+                south = False
+
+        # for each row going up and down go and place images east and west all the way until it doesn't
+        # have the confidence to anymore
+        for row in range(len(self.map_indices)):
+            # East half implementation
+            east = True
+            self.cur_image.x = self.map_indices[row][0].x
+            self.cur_image.y = self.map_indices[row][0].y
+            self.cur_image.index = self.map_indices[row][0].index
+            while(east == True):
+                con, index = self.compare_tile(self.cur_image.index, 'e')
+                n_con, n_index = self.compare_tile(index, 'w')
+                if (n_index == self.cur_image.index and index in self.unused_images):
+                    t = Tile(self.cur_image.y, self.cur_image.x+1, index)
+                    self.place_image(t)
+                    self.cur_image.index = index
+                    self.cur_image.x += 1
+
+                else:
+                    east = False
+
+            # West half implementation
+            west = True
+            self.cur_image.x = self.map_indices[row][0].x
+            self.cur_image.y = self.map_indices[row][0].y
+            self.cur_image.index = self.map_indices[row][0].index
+            while(west == True):
+                con, index = self.compare_tile(self.cur_image.index, 'w')
+                n_con, n_index = self.compare_tile(index, 'e')
+                if (n_index == self.cur_image.index and index in self.unused_images):
+                    t = Tile(self.cur_image.y, self.cur_image.x-1, index)
+                    self.place_image(t)
+                    self.cur_image.index = index
+                    self.cur_image.x -= 1
+
+                else:
+                    west = False
+
+        top = self.map_indices[0]
+        bot = self.map_indices[-1]
+        for c in range(len(self.map_indices[0])):
+            # North half implementation
+
             north = True
-            south = True
-
+            self.cur_image.x = top[c].x
+            self.cur_image.y = top[c].y
+            self.cur_image.index = top[c].index
             # goes and maps all the way up until it doesn't have enough confidence to place
             while(north == True):
                 con, index = self.compare_tile(self.cur_image.index, 'n')
                 n_con, n_index = self.compare_tile(index, 's')
-                if (n_index == self.cur_image.index):
+                if (n_index == self.cur_image.index and index in self.unused_images):
                     t = Tile(self.cur_image.y-1, self.cur_image.x, index)
                     self.place_image(t)
                     self.cur_image.index = index
                     self.cur_image.y -= 1
+
                 else:
-                    self.cur_image.y = 0
-                    self.cur_image.index = self.first_img
                     north = False
 
+        for col in range(len(self.map_indices[-1])):
+            # south half implementation
+            south = True
+            self.cur_image.x = bot[col].x
+            self.cur_image.y = bot[col].y
+            self.cur_image.index = bot[col].index
             # goes and maps all the way down until it doesn't have enough confidence to place
             while(south == True):
                 con, index = self.compare_tile(self.cur_image.index, 's')
                 n_con, n_index = self.compare_tile(index, 'n')
-                if (n_index == self.cur_image.index):
+                if (n_index == self.cur_image.index and index in self.unused_images):
                     t = Tile(self.cur_image.y+1, self.cur_image.x, index)
                     self.place_image(t)
                     self.cur_image.index = index
@@ -250,185 +356,103 @@ class Image:
                 else:
                     south = False
 
-            # for each row going up and down go and place images east and west all the way until it doesn't
-            # have the confidence to anymore
-            for row in range(len(self.map_indices)):
-                # East half implementation
-                east = True
-                self.cur_image.x = self.map_indices[row][0].x
-                self.cur_image.y = self.map_indices[row][0].y
-                self.cur_image.index = self.map_indices[row][0].index
-                while(east == True):
-                    con, index = self.compare_tile(self.cur_image.index, 'e')
-                    n_con, n_index = self.compare_tile(index, 'w')
-                    if (n_index == self.cur_image.index):
-                        t = Tile(self.cur_image.y, self.cur_image.x+1, index)
-                        self.place_image(t)
-                        self.cur_image.index = index
-                        self.cur_image.x += 1
+        # Add East and West tiles to the newly added rows on top and bottom
+        for row in range(len(self.map_indices)):
+            # East half implementation
+            east = True
+            self.cur_image.x = self.map_indices[row][-1].x
+            self.cur_image.y = self.map_indices[row][-1].y
+            self.cur_image.index = self.map_indices[row][-1].index
+            while(east == True):
+                con, index = self.compare_tile(self.cur_image.index, 'e')
+                n_con, n_index = self.compare_tile(index, 'w')
+                if (n_index == self.cur_image.index and index in self.unused_images):
+                    t = Tile(self.cur_image.y, self.cur_image.x+1, index)
+                    self.place_image(t)
+                    self.cur_image.index = index
+                    self.cur_image.x += 1
 
-                    else:
-                        east = False
+                else:
+                    east = False
 
-                # West half implementation
-                west = True
-                self.cur_image.x = self.map_indices[row][0].x
-                self.cur_image.y = self.map_indices[row][0].y
-                self.cur_image.index = self.map_indices[row][0].index
-                while(west == True):
-                    con, index = self.compare_tile(self.cur_image.index, 'w')
-                    n_con, n_index = self.compare_tile(index, 'e')
-                    if (n_index == self.cur_image.index):
-                        t = Tile(self.cur_image.y, self.cur_image.x-1, index)
-                        self.place_image(t)
-                        self.cur_image.index = index
-                        self.cur_image.x -= 1
+            # West half implementation
+            west = True
+            self.cur_image.x = self.map_indices[row][0].x
+            self.cur_image.y = self.map_indices[row][0].y
+            self.cur_image.index = self.map_indices[row][0].index
+            while(west == True):
+                con, index = self.compare_tile(self.cur_image.index, 'w')
+                n_con, n_index = self.compare_tile(index, 'e')
+                if (n_index == self.cur_image.index and index in self.unused_images):
+                    t = Tile(self.cur_image.y, self.cur_image.x-1, index)
+                    self.place_image(t)
+                    self.cur_image.index = index
+                    self.cur_image.x -= 1
 
-                    else:
-                        west = False
+                else:
+                    west = False
 
-            top = self.map_indices[0]
-            bot = self.map_indices[-1]
-            for c in range(len(self.map_indices[0])):
-                # North half implementation
 
-                north = True
-                self.cur_image.x = top[c].x
-                self.cur_image.y = top[c].y
-                self.cur_image.index = top[c].index
-                # goes and maps all the way up until it doesn't have enough confidence to place
-                while(north == True):
-                    con, index = self.compare_tile(self.cur_image.index, 'n')
-                    n_con, n_index = self.compare_tile(index, 's')
-                    if (n_index == self.cur_image.index):
-                        t = Tile(self.cur_image.y-1, self.cur_image.x, index)
-                        self.place_image(t)
-                        self.cur_image.index = index
-                        self.cur_image.y -= 1
-
-                    else:
-                        north = False
-
-            for col in range(len(self.map_indices[-1])):
-                # south half implementation
-                south = True
-                self.cur_image.x = bot[col].x
-                self.cur_image.y = bot[col].y
-                self.cur_image.index = bot[col].index
-                # goes and maps all the way down until it doesn't have enough confidence to place
-                while(south == True):
+        # Starting at the top row on a row to row basis fill in each row beneath with any x values that the
+        # row below the current doesn't have
+        x_list = self.list_of_x()
+        for row in range(len(self.map_indices)-1):
+            #print(self.map_indices[row])
+            for x in range(len(self.map_indices[row])):
+                self.cur_image.x = self.map_indices[row][x].x
+                self.cur_image.y = self.map_indices[row][x].y
+                self.cur_image.index = self.map_indices[row][x].index
+                in_next_row = False
+                if (self.map_indices[row][x].x not in x_list[row+1]):
                     con, index = self.compare_tile(self.cur_image.index, 's')
                     n_con, n_index = self.compare_tile(index, 'n')
-                    if (n_index == self.cur_image.index):
+                    if (n_index == self.cur_image.index and index in self.unused_images):
                         t = Tile(self.cur_image.y+1, self.cur_image.x, index)
                         self.place_image(t)
-                        self.cur_image.index = index
-                        self.cur_image.y += 1
 
-                    else:
-                        south = False
 
-            self.sort_tiles()
-            # Add East and West tiles to the newly added rows on top and bottom
-            for row in range(len(self.map_indices)):
-                # East half implementation
-                east = True
-                self.cur_image.x = self.map_indices[row][-1].x
-                self.cur_image.y = self.map_indices[row][-1].y
-                self.cur_image.index = self.map_indices[row][-1].index
-                while(east == True):
-                    con, index = self.compare_tile(self.cur_image.index, 'e')
-                    n_con, n_index = self.compare_tile(index, 'w')
-                    if (n_index == self.cur_image.index):
-                        t = Tile(self.cur_image.y, self.cur_image.x+1, index)
+        x_list = self.list_of_x()
+        for row in range(len(self.map_indices)-1, 0, -1):
+            for x in range(len(self.map_indices[row])):
+                self.cur_image.x = self.map_indices[row][x].x
+                self.cur_image.y = self.map_indices[row][x].y
+                self.cur_image.index = self.map_indices[row][x].index
+                in_next_row = False
+                if (self.map_indices[row][x].x not in x_list[row-1]):
+                    con, index = self.compare_tile(self.cur_image.index, 'n')
+                    n_con, n_index = self.compare_tile(index, 's')
+                    if (n_index == self.cur_image.index and index in self.unused_images):
+                        t = Tile(self.cur_image.y-1, self.cur_image.x, index)
                         self.place_image(t)
-                        self.cur_image.index = index
-                        self.cur_image.x += 1
-
-                    else:
-                        east = False
-
-                # West half implementation
-                west = True
-                self.cur_image.x = self.map_indices[row][0].x
-                self.cur_image.y = self.map_indices[row][0].y
-                self.cur_image.index = self.map_indices[row][0].index
-                while(west == True):
-                    con, index = self.compare_tile(self.cur_image.index, 'w')
-                    n_con, n_index = self.compare_tile(index, 'e')
-                    if (n_index == self.cur_image.index):
-                        t = Tile(self.cur_image.y, self.cur_image.x-1, index)
-                        self.place_image(t)
-                        self.cur_image.index = index
-                        self.cur_image.x -= 1
-
-                    else:
-                        west = False
 
 
-            # Starting at the top row on a row to row basis fill in each row beneath with any x values that the
-            # row below the current doesn't have
-            x_list = self.list_of_x()
-            for row in range(len(self.map_indices)-1):
-                #print(self.map_indices[row])
-                for x in range(len(self.map_indices[row])):
-                    self.cur_image.x = self.map_indices[row][x].x
-                    self.cur_image.y = self.map_indices[row][x].y
-                    self.cur_image.index = self.map_indices[row][x].index
-                    in_next_row = False
-                    if (self.map_indices[row][x].x not in x_list[row+1]):
-                        con, index = self.compare_tile(self.cur_image.index, 's')
-                        n_con, n_index = self.compare_tile(index, 'n')
-                        if (n_index == self.cur_image.index):
-                            t = Tile(self.cur_image.y+1, self.cur_image.x, index)
-                            self.place_image(t)
-
-
-            x_list = self.list_of_x()
-            for row in range(len(self.map_indices)-1, 0, -1):
-                for x in range(len(self.map_indices[row])):
-                    self.cur_image.x = self.map_indices[row][x].x
-                    self.cur_image.y = self.map_indices[row][x].y
-                    self.cur_image.index = self.map_indices[row][x].index
-                    in_next_row = False
-                    if (self.map_indices[row][x].x not in x_list[row-1]):
-                        con, index = self.compare_tile(self.cur_image.index, 'n')
-                        n_con, n_index = self.compare_tile(index, 's')
-                        if (n_index == self.cur_image.index):
-                            t = Tile(self.cur_image.y-1, self.cur_image.x, index)
-                            self.place_image(t)
-
-
-            # This will sort the tiles by their x value
-            self.sort_tiles()
-            islands.append(self.map_indices)
-            print(self.max_images)
-            if (self.max_images > 0):
-                self.clear_map()
-                t = Tile(0,0,self.unused_images[0])
-                self.map_indices.append([t])
-
-            if (self.max_images == 0):
-                # added function to put all the pieces together by row first and then column but
-                # rows all have to be same size to work so holes need to be patched
-                #self.build_image(islands)
-
+        # This will sort the tiles by their x value
+        self.sort_tiles()
+        #self.print_map()
+        #self.build_image()
 
     # Fill holes and concatenate rows and then concatenate vertically to rebuild the image
-    def build_image(self, islands):
+    def build_image(self):
         rows = []
         black_image = cv2.imread("black_image.png", cv2.IMREAD_COLOR)
         b = black_image[0:self.pixels, 0:self.pixels]
         self.images.append(b)
         max_x = len(max(self.map_indices, key=len))
 
-        #for row in range(len(self.map_indices)):
-        #    x_val = self.map_indices[row][0].x
-        #    for column in range(len(self.map_indices[row])):
-        #        if (self.map_indices[row][column].x != x_val):
-        #            t = Tile(row, x_val, len(self.images)-1)
-        #            self.place_image(t)
-        #        x_val += 1
+
+        #
+        # for row in range(len(self.map_indices)):
+        #     x_val = self.map_indices[row][0].x
+        #     for column in range(max_x):
+        #         try:
+        #             if (self.map_indices[row][column].x != x_val):
+        #                 t = Tile(row, x_val, len(self.images)-1)
+        #                 self.place_image(t)
+        #         except:
+        #             t = Tile(row, x_val, len(self.images)-1)
+        #             self.place_image(t)
+        #         x_val += 1
+
 
         im = self.list_of_images()
 
