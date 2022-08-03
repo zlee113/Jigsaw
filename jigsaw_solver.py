@@ -19,21 +19,17 @@ def main():
     while (x != 'y'):
         islands = []
         t = Tile(0,0, random.randrange(0, len([n for n in os.listdir(path) if os.path.join(path, n)])))
-
         test = Image(t, pixels, path)
         test.map_image()
 
-        # while(test.max_images < 0):
-        #     test.clear_map()
-        #     t = Tile(0,0, random.randrange(0, len([n for n in os.listdir(path) if os.path.join(path, n)])))
-        #     test = Image(t, pixels, path)
-        #     test.map_image()
-        test.print_map()
-     #   for i in range(len(test.map_indices)):
-     #       for j in range(len(test.map_indices[i])-1):
-     #           if (test.map_indices[i][j].x + 1 != test.map_indices[i][j+1].x):
-     #               print("Image:", str(38*i + j + 1), "to", str(38*i + test.map_indices[i][j+1].x + abs(test.map_indices[i][0].x) - 1) , "is missing")
+        while(test.max_images < 0):
+            test.clear_map()
+            t = Tile(0,0, random.randrange(0, len([n for n in os.listdir(path) if os.path.join(path, n)])))
+            test = Image(t, pixels, path)
+            test.map_image()
 
+        test.print_map()
+        print("\n\nImages Left:", test.max_images, "\n")
         print('\nDoes the output look correct (type y to end): ')
         x = input()
 
@@ -180,7 +176,7 @@ class Image:
         x = 0
         y = tile.y + abs(self.map_indices[0][0].y)
         x_list = self.list_of_x()
-        print(tile.index)
+
         if (tile.index in self.unused_images):
             self.unused_images.remove(tile.index)
 
@@ -247,7 +243,6 @@ class Image:
                 continue
             self.unused_images.append(i)
 
-        print(self.unused_images)
         north = True
         south = True
 
@@ -397,7 +392,6 @@ class Image:
         # row below the current doesn't have
         x_list = self.list_of_x()
         for row in range(len(self.map_indices)-1):
-            #print(self.map_indices[row])
             for x in range(len(self.map_indices[row])):
                 self.cur_image.x = self.map_indices[row][x].x
                 self.cur_image.y = self.map_indices[row][x].y
@@ -443,7 +437,6 @@ class Image:
 
         x_list = self.list_of_x()
         for row in range(len(self.map_indices)-1):
-            #print(self.map_indices[row])
             for x in range(len(self.map_indices[row])):
                 self.cur_image.x = self.map_indices[row][x].x
                 self.cur_image.y = self.map_indices[row][x].y
@@ -452,7 +445,7 @@ class Image:
                 if (self.map_indices[row][x].x not in x_list[row+1]):
                     t = Tile(self.cur_image.y+1, self.cur_image.x, len(self.images)-1)
                     self.place_image(t)
-
+                    self.max_images += 1
         x_list = self.list_of_x()
         for row in range(len(self.map_indices)-1, 0, -1):
             for x in range(len(self.map_indices[row])):
@@ -463,7 +456,7 @@ class Image:
                 if (self.map_indices[row][x].x not in x_list[row-1]):
                     t = Tile(self.cur_image.y-1, self.cur_image.x, len(self.images)-1)
                     self.place_image(t)
-        self.print_map()
+                    self.max_images += 1
         im = self.list_of_images()
 
         for r in range(len(self.map_indices)):
